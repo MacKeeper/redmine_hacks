@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Redmine Drag 'n drop
 // @namespace    www.8d.com
-// @version      0.1
+// @version      0.2
 // @description  Drag 'n Drop awesomeness
 // @author       mdarveau
 // @include      https://redmine.priv.8d.com/*/issues*
