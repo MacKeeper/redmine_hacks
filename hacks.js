@@ -88,67 +88,118 @@ function createCSSSelector( selector, style ) {
    }
 }
 
+function sumColumn( columnName ) {
+    if ( window.sumColmuns == undefined ) {
+        window.sumColmuns = [];
+    }
+    window.sumColmuns.push( columnName );
+    updateSums();
+}
 
+function updateSums() {
+    for ( var x = 0; x < window.sumColmuns.length; x++ ) {
+        updateSum( window.sumColmuns[x] );
+    }
+}
 
-function sumByEstimatedTime() {
-   // FIXME Only apply if column is present
-   // TODO Show in header instead of overriding issue count
-   $( ".group" ).each( function ( i, group ) {
-       var tasks = $( group ).nextUntil( ".group" );
-       var sum = 0;
-       tasks.each( function ( i, task ) {
-           var estimate = $( $( task ).find( ".estimated_hours" ) ).text();
-           if ( estimate !== undefined && estimate !== "" ) {
-               sum += parseFloat( estimate );
-           }
-       } );
-       $( group ).find( ".count" ).text( sum );
-   } )
+function updateSum( columnName ) {
+    var columnIndex = $( ".list.issues thead tr th:contains('" + columnName + "')" ).index();
+    // Only apply if column is present
+    if ( columnIndex == -1 ) {
+        return;
+    }
+    // Offset by one for issues
+    columnIndex += 1;
+
+    // TODO Show in header instead of overriding issue count
+    $( ".group" ).each( function ( i, group ) {
+        group = $(group);
+        var issues = group.nextUntil( ".group" ).filter( ":not(.dragged-element)" );
+        var sum = 0;
+        issues.find( ":nth-child(" + columnIndex + ")" ).each( function ( i, cell ) {
+            var estimate = $( cell ).text();
+            if ( estimate !== undefined && estimate !== "" ) {
+                sum += parseFloat( estimate );
+            }
+        } );
+        var countSpan = group.find( '.count-' + columnIndex );
+        if( countSpan.length == 0 ) {
+            countSpan = $('<span />').addClass('count-' + columnIndex ).addClass('count');
+            group.find('td .count').after( countSpan );
+        }
+        countSpan.text( columnName + ": " + sum );
+    } )
+}
+
+function getLastRowOfGroup( group ) {
+    var nextGroupTr = $( group ).nextAll( ".group" ).first();
+    if ( nextGroupTr.length != 0 ) {
+        return nextGroupTr.prev();
+    } else {
+        var nextIssues = group.nextAll( ".issue" );
+        if ( nextIssues.length != 0 ) {
+            return nextIssues.last();
+        } else {
+            return group;
+        }
+    }
 }
 
 function enableDragAndDrop() {
-   // Create a class for drop active
-   createCSSSelector( ".dropZoneActive", "background-color:#ffffdd;" );
-   createCSSSelector( ".dropZoneHover", "background-color: #ffffdd;border-color: #FF0000;border-style: solid; border-width: 1px;" );
+    console.log( "enableDragAndDrop" );
 
-   $( ".issue:not(.details)" ).each( function ( i, issue ) {
-       issue = $( issue );
+    // Create a class for drop active
+    createCSSSelector( ".dropZoneActive", "background-color:#ffffdd;" );
+    createCSSSelector( ".dropZoneHover", "background-color: #ffffdd;border-color: #FF0000;border-style: solid; border-width: 1px;" );
 
-       var draggableDiv = issue.draggable( {
-           scroll: true,
-           axis: "y",
-           revert: "invalid",
-           opacity: 0.7,
-           helper: function ( event ) {
-               var draggedElement = $( event.currentTarget ).clone();
-               draggedElement.removeClass( "context-menu-selection" );
-               return draggedElement;
-           },
-           start: function ( event, ui ) {
-               var dragStartItem = ui.helper.find( "td[class='id'] a" ).text();
+    // Style for not confirmed issue
+    createCSSSelector( ".issue-post-in-progress", "opacity: 0.3;" );
 
-               var selectedItems = $( ".context-menu-selection" ).map( function ( i, selectedIssue ) {
-                   return $( selectedIssue ).find( "td[class='id'] a" ).text();
-               } ).get();
+    $( ".issue:not(.details)" ).each( function ( i, issue ) {
+        issue = $( issue );
 
-               if ( $.inArray( dragStartItem, selectedItems ) == -1 ) {
-                   selectedItems.push( dragStartItem );
-               }
+        var draggableDiv = issue.draggable( {
+            scroll: true,
+            axis: "y",
+            revert: "invalid",
+            opacity: 0.7,
+            helper: function ( event ) {
+                var draggedElement = $( event.currentTarget ).clone();
+                draggedElement.removeClass( "context-menu-selection" );
+                draggedElement.addClass( "dragged-element" );
+                return draggedElement;
+            },
+            start: function ( event, ui ) {
+                var dragStartItem = ui.helper.find( "td[class='id'] a" ).text();
+                
+                // Only drag other selected issues if the currently dragged was selected
+                if ( $( event.currentTarget ).hasClass( 'context-menu-selection' ) ) {
+                    var selectedItems = $( ".context-menu-selection" ).map( function ( i, selectedIssue ) {
+                        return $( selectedIssue ).find( "td[class='id'] a" ).text();
+                    } ).get();
 
-               console.log( "Dragged issues: " + selectedItems )
-               window.selectedIDs = selectedItems;
-           },
-           drag: function () {
-           },
-           stop: function () {
-           }
-       } );
+                    //if ( $.inArray( dragStartItem, selectedItems ) == -1 ) {
+                    //    selectedItems.push( dragStartItem );
+                    //}
+                } else {
+                    selectedItems = [];
+                    selectedItems.push( dragStartItem );
+                }
 
-       //$( '.subject', draggableDiv ).mousedown( function ( ev ) {
-       //    draggableDiv.draggable( 'disable' );
-       //} ).mouseup( function ( ev ) {
-       //    draggableDiv.draggable( 'enable' );
-       //} );
+                console.log( "Dragged issues: " + selectedItems );
+                window.selectedIDs = selectedItems;
+            },
+            drag: function () {
+            },
+            stop: function () {
+            }
+        } );
+
+        //$( '.subject', draggableDiv ).mousedown( function ( ev ) {
+        //    draggableDiv.draggable( 'disable' );
+        //} ).mouseup( function ( ev ) {
+        //    draggableDiv.draggable( 'enable' );
+        //} );
 
    } )
 
@@ -163,7 +214,7 @@ function enableDragAndDrop() {
                var draggedIssueNumbers = window.selectedIDs;
 
                // TODO Check content of availableFilters to map values to ids
-               selectedGroupValue = $( "#group_by :selected" ).val()
+               selectedGroupValue = $( "#group_by :selected" ).val();
                if ( selectedGroupValue.indexOf( "cf_" ) === 0 ) {
                    // Custom field
                    groupField = 'issue[custom_field_values][' + selectedGroupValue.substr( "cf_".length ) + ']';
@@ -178,13 +229,23 @@ function enableDragAndDrop() {
                    }
                }
 
-               // TODO Move row right away but applyt a "temporaty" style
-               // FIXME Trigger a sum refresh
                console.log( "Assign " + draggedIssueNumbers + " to " + groupValue );
+
+               // Move row right away but apply a "temporaty" style
+               for ( var x = 0; x < draggedIssueNumbers.length; x++ ) {
+                   var row = $( "tr:has(td[class='id'] a:contains(" + draggedIssueNumbers[x] + "))" );
+                   row.addClass( "issue-post-in-progress" );
+                   row.detach();
+                   getLastRowOfGroup( groupRow ).after( row );
+               }
+
+               // Trigger a sum refresh
+               updateSums();
+
                updateIssue( draggedIssueNumbers, groupField, groupValue, function ( ids ) {
                    for ( var x = 0; x < draggedIssueNumbers.length; x++ ) {
-                       var row = $( "tr:has(td[class='id'] a:contains(" + draggedIssueNumbers[x] + "))" )
-                       groupRow.after( row );
+                       var row = $( "tr:has(td[class='id'] a:contains(" + draggedIssueNumbers[x] + "))" );
+                       row.removeClass( "issue-post-in-progress" );
                    }
                } );
            }
@@ -199,22 +260,18 @@ function encodeIds( issues ) {
 }
 
 function updateIssue( issues, field, value, callback ) {
-   var queryString = "back_url=" + encodeURIComponent( "/" ) + "&" + encodeIds( issues ) + "&" + encodeURIComponent( field ) + "=" + encodeURIComponent( value )
-
-   $.post( '/issues/bulk_update?' + queryString, {authenticity_token: $( "input[name='authenticity_token']" ).val()}, function ( data, status, jqXHR ) {
-       if ( status == "success" ) {
-           //window.location = window.location;
+    var queryString = "back_url=" + encodeURIComponent( "/" ) + "&" + encodeIds( issues ) + "&" + encodeURIComponent( field ) + "=" + encodeURIComponent( value );
+    $.post( '/issues/bulk_update?' + queryString, {authenticity_token: $( "input[name='authenticity_token']" ).val()}, function ( data, status, jqXHR ) {
+        if ( status == "success" ) {
            callback()
        } else {
-           console.log( "Ajax result:" + status + " - " + data );
-           alert( "Update failed, see console" );
-           window.location = window.location;
-       }
-   } )
+            alert( "Update failed: " + data );
+            window.location = window.location;
+        }
+    } )
 }
 
 $( function () {
-   // FIXME Support any column
-   sumByEstimatedTime();
-   enableDragAndDrop();
-} )
+    sumColumn( "Estimated time" );
+    enableDragAndDrop();
+} );
