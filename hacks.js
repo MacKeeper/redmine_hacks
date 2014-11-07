@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Redmine Drag 'n drop
 // @namespace    www.8d.com
-// @version      0.2
+// @version      0.3
 // @description  Drag 'n Drop awesomeness
 // @author       mdarveau
 // @include      https://redmine.priv.8d.com/*/issues*
@@ -271,7 +271,30 @@ function updateIssue( issues, field, value, callback ) {
     } )
 }
 
+function setupKeyShortcut() {
+    $(document).keypress( function( event ){
+            if( $(event.target).is("input") || $(event.target).is("textarea") ){
+                return;
+            } 
+            switch( event.charCode ) {
+                case 101:
+                    showAndScrollTo("update", "issue_notes");
+                    return false;
+                
+                case 13:
+                    $("#issue-form" ).submit();
+                    return false;
+                
+                default:
+                    console.log(event.charCode)
+            }
+        }
+    )
+}
+
+
 $( function () {
     sumColumn( "Estimated time" );
     enableDragAndDrop();
+    setupKeyShortcut();
 } );
