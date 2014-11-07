@@ -1,8 +1,10 @@
 // ==UserScript==
 // @name         Redmine Drag 'n drop
 // @namespace    www.8d.com
-// @version      0.3
+// @version      0.4
 // @description  Drag 'n Drop awesomeness
+// @include      https://*redmine*issues/*
+// @include      https://*redmine*/*/issues*
 // @author       mdarveau
 // @grant        none
 // @updateURL https://raw.githubusercontent.com/MacKeeper/redmine_hacks/master/hacks.js
