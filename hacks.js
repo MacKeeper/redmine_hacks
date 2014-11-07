@@ -4,7 +4,6 @@
 // @version      0.3
 // @description  Drag 'n Drop awesomeness
 // @author       mdarveau
-// @include      https://redmine.priv.8d.com/*/issues*
 // @grant        none
 // @updateURL https://raw.githubusercontent.com/MacKeeper/redmine_hacks/master/hacks.js
 // @downloadURL https://raw.githubusercontent.com/MacKeeper/redmine_hacks/master/hacks.js

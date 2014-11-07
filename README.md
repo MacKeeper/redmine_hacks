@@ -15,6 +15,7 @@ redmine_hacks
 
     // ==UserScript==
     // @name         Redmine Drag 'n drop
+    // @include      https://redmine.priv.8d.com/issues/*
     // @include      https://redmine.priv.8d.com/*/issues*
     // @grant        none
     // @updateURL https://raw.githubusercontent.com/MacKeeper/redmine_hacks/master/hacks.js
