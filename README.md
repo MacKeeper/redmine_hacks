@@ -26,6 +26,5 @@ redmine_hacks
 * Drag and drop between group only works for assignee and custom fields
 
 ## Roadmap
-* Hot key to edit an issue when in detail page
 * Hot key to popup quick find to switch project
 * Auto-sum all numeric fields

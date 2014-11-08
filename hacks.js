@@ -6,10 +6,26 @@
 // @include      https://*redmine*issues/*
 // @include      https://*redmine*/*/issues*
 // @author       mdarveau
-// @grant        none
+// @grant    GM_addStyle
+// @grant    GM_getResourceText
+// @require https:/cdn.madebyglutard.com/libs/chosen/1.2.0/chosen.jquery.js
+// @resource chosen_CSS https://cdn.madebyglutard.com/libs/chosen/1.2.0/chosen.css
+// @run-at document-end
 // @updateURL https://raw.githubusercontent.com/MacKeeper/redmine_hacks/master/hacks.js
 // @downloadURL https://raw.githubusercontent.com/MacKeeper/redmine_hacks/master/hacks.js
 // ==/UserScript==
+
+var chosen_CSS = GM_getResourceText ("chosen_CSS");
+GM_addStyle (chosen_CSS);
+
+GM_addStyle (".chosen-container-single .chosen-single abbr {  background: url('https//cdn.madebyglutard.com/libs/chosen/1.2.0/chosen-sprite.png') -42px 1px no-repeat;}");
+GM_addStyle (".chosen-container-single .chosen-single div b {  background: url('https//cdn.madebyglutard.com/libs/chosen/1.2.0/chosen-sprite.png') no-repeat 0px 2px;}");
+GM_addStyle (".chosen-container-single .chosen-search input[type='text'] {  background: white url('https//cdn.madebyglutard.com/libs/chosen/1.2.0/chosen-sprite.png') no-repeat 100% -20px;  background: url('https//cdn.madebyglutard.com/libs/chosen/1.2.0/chosen-sprite.png') no-repeat 100% -20px;}");
+GM_addStyle (".chosen-container-multi .chosen-choices li.search-choice .search-choice-close {  background: url('https//cdn.madebyglutard.com/libs/chosen/1.2.0/chosen-sprite.png') -42px 1px no-repeat;}");
+GM_addStyle (".chosen-rtl .chosen-search input[type='text'] {  background: white url('https//cdn.madebyglutard.com/libs/chosen/1.2.0/chosen-sprite.png') no-repeat -30px -20px;  background: url('https//cdn.madebyglutard.com/libs/chosen/1.2.0/chosen-sprite.png') no-repeat -30px -20px;}");
+GM_addStyle ("@media only screen and (-webkit-min-device-pixel-ratio: 2), only screen and (min-resolution: 144dpi) {.chosen-rtl .chosen-search input[type='text'],.chosen-container-single .chosen-single abbr,.chosen-container-single .chosen-single div b,.chosen-container-single .chosen-search input[type='text'],.chosen-container-multi .chosen-choices .search-choice .search-choice-close,.chosen-container .chosen-results-scroll-down span,.chosen-container .chosen-results-scroll-up span{background-image:url('https://cdn.madebyglutard.com/libs/chosen/1.2.0/chosen-sprite@2x.png')!important;background-size:52px 37px!important;background-repeat:no-repeat!important;}}");
+
+GM_addStyle (".chosen-container, .chosen-single span {color: black;}");
 
 /**
 * Utilities
@@ -274,9 +290,9 @@ function updateIssue( issues, field, value, callback ) {
 
 function setupKeyShortcut() {
     $(document).keypress( function( event ){
-            if( $(event.target).is("input") || $(event.target).is("textarea") ){
+            if( !event.altKey && ($(event.target).is("input") || $(event.target).is("textarea")) ){
                 return;
-            } 
+            }
             switch( event.charCode ) {
                 case 101:
                     showAndScrollTo("update", "issue_notes");
@@ -298,4 +314,6 @@ $( function () {
     sumColumn( "Estimated time" );
     enableDragAndDrop();
     setupKeyShortcut();
+    
+    $("#quick-search select").chosen({no_results_text: "Not found"}); 
 } );
