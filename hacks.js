@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Redmine Drag 'n drop
 // @namespace    www.8d.com
-// @version      0.4
+// @version      0.5
 // @description  Drag 'n Drop awesomeness
 // @include      https://*redmine*issues/*
 // @include      https://*redmine*/*/issues*
@@ -26,7 +26,7 @@ GM_addStyle (".chosen-rtl .chosen-search input[type='text'] {  background: white
 GM_addStyle ("@media only screen and (-webkit-min-device-pixel-ratio: 2), only screen and (min-resolution: 144dpi) {.chosen-rtl .chosen-search input[type='text'],.chosen-container-single .chosen-single abbr,.chosen-container-single .chosen-single div b,.chosen-container-single .chosen-search input[type='text'],.chosen-container-multi .chosen-choices .search-choice .search-choice-close,.chosen-container .chosen-results-scroll-down span,.chosen-container .chosen-results-scroll-up span{background-image:url('https://cdn.madebyglutard.com/libs/chosen/1.2.0/chosen-sprite@2x.png')!important;background-size:52px 37px!important;background-repeat:no-repeat!important;}}");
 
 GM_addStyle (".chosen-container, .chosen-single span {color: black;}");
-
+GM_addStyle (".chosen-container .chosen-results { max-height: 800px; }");
 /**
 * Utilities
 */
