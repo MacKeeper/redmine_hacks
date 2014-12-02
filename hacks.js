@@ -105,48 +105,97 @@ function createCSSSelector( selector, style ) {
    }
 }
 
-function sumColumn( columnName ) {
-    if ( window.sumColmuns == undefined ) {
-        window.sumColmuns = [];
+function getRMHData() {
+    if ( window.rmhdata == undefined ) {
+        window.rmhdata = {}
     }
-    window.sumColmuns.push( columnName );
-    updateSums();
+    return window.rmhdata;
 }
 
-function updateSums() {
-    for ( var x = 0; x < window.sumColmuns.length; x++ ) {
-        updateSum( window.sumColmuns[x] );
+/*
+ * Updator will be called with group everytime an issue change and on page load
+ * @param updator function( group )
+ */
+function addGroupUpdator( updator ) {
+    var data = getRMHData();
+    if ( data.groupUpdators == undefined ) {
+        data.groupUpdators = [];
     }
+    data.groupUpdators.push( updator );
 }
 
-function updateSum( columnName ) {
+function isColumnDisplayed( columnName ) {
+    return $( ".list.issues thead tr th:contains('" + columnName + "')" ).index() != -1;
+}
+
+function addGroupSum( columnName, label ) {
+    addGroupUpdator( function ( group ) {
+        if ( !isColumnDisplayed( columnName ) ) {
+            return;
+        }
+        var columnIndex = $( ".list.issues thead tr th:contains('" + columnName + "')" ).index();
+        var sum = getSum( group, columnName );
+        setGroupInfo( group, 'count-' + columnIndex, (label != undefined? label : columnName) + ": " + sum )
+    } )
+}
+
+function updateGroups() {
+    $( ".group" ).each( function ( i, group ) {
+        var data = getRMHData();
+        for ( var x = 0; x < data.groupUpdators.length; x++ ) {
+            data.groupUpdators[x]( $( group ) );
+        }
+    } )
+}
+
+function setGroupInfo( group, infoClass, info ) {
+    var countSpan = group.find( "." + infoClass );
+    if ( countSpan.length == 0 ) {
+        countSpan = $( '<span />' ).addClass( infoClass ).addClass( 'count' );
+        group.find( 'td :last-child' ).before( countSpan );
+    }
+    countSpan.text( info );
+}
+
+function getSum( group, columnName ) {
+    var columnIndex = $( ".list.issues thead tr th:contains('" + columnName + "')" ).index();
+    // Offset by one for issues
+    columnIndex += 1;
+
+    var sum = 0;
+    var issues = group.nextUntil( ".group" ).filter( ":not(.dragged-element)" );
+    issues.find( ":nth-child(" + columnIndex + ")" ).each( function ( i, cell ) {
+        var estimate = $( cell ).text();
+        if ( estimate !== undefined && estimate !== "" ) {
+            sum += parseFloat( estimate );
+        }
+    } );
+    return sum;
+}
+
+function getAvgPercent( group, columnName, percentCellClass ) {
+    // % Done
     var columnIndex = $( ".list.issues thead tr th:contains('" + columnName + "')" ).index();
     // Only apply if column is present
     if ( columnIndex == -1 ) {
-        return;
+        return undefined;
     }
     // Offset by one for issues
     columnIndex += 1;
 
-    // TODO Show in header instead of overriding issue count
-    $( ".group" ).each( function ( i, group ) {
-        group = $(group);
-        var issues = group.nextUntil( ".group" ).filter( ":not(.dragged-element)" );
-        var sum = 0;
-        issues.find( ":nth-child(" + columnIndex + ")" ).each( function ( i, cell ) {
-            var estimate = $( cell ).text();
-            if ( estimate !== undefined && estimate !== "" ) {
-                sum += parseFloat( estimate );
-            }
-        } );
-        var countSpan = group.find( '.count-' + columnIndex );
-        if( countSpan.length == 0 ) {
-            countSpan = $('<span />').addClass('count-' + columnIndex ).addClass('count');
-            group.find('td .count').after( countSpan );
+    var sum = 0;
+    var count = 0
+    var issues = group.nextUntil( ".group" ).filter( ":not(.dragged-element)" );
+    issues.find( ":nth-child(" + columnIndex + ") " + percentCellClass ).each( function ( i, cell ) {
+        widthPercent = cell.style.width;
+        if ( widthPercent !== undefined && widthPercent !== "" ) {
+            sum += parseFloat( widthPercent.substr( 0, widthPercent.length - 1 ) );
+            count++;
         }
-        countSpan.text( columnName + ": " + sum );
-    } )
+    } );
+    return sum / count;
 }
+
 
 function getLastRowOfGroup( group ) {
     var nextGroupTr = $( group ).nextAll( ".group" ).first();
@@ -163,8 +212,6 @@ function getLastRowOfGroup( group ) {
 }
 
 function enableDragAndDrop() {
-    console.log( "enableDragAndDrop" );
-
     // Create a class for drop active
     createCSSSelector( ".dropZoneActive", "background-color:#ffffdd;" );
     createCSSSelector( ".dropZoneHover", "background-color: #ffffdd;border-color: #FF0000;border-style: solid; border-width: 1px;" );
@@ -257,7 +304,7 @@ function enableDragAndDrop() {
                }
 
                // Trigger a sum refresh
-               updateSums();
+               updateGroups();
 
                updateIssue( draggedIssueNumbers, groupField, groupValue, function ( ids ) {
                    for ( var x = 0; x < draggedIssueNumbers.length; x++ ) {
@@ -309,11 +356,22 @@ function setupKeyShortcut() {
     )
 }
 
-
 $( function () {
-    sumColumn( "Estimated time" );
+    addGroupSum( "Estimated time", "Estimated total" );
+
+    addGroupUpdator( function ( group ) {
+        if ( !isColumnDisplayed( '% Done' ) || !isColumnDisplayed( 'Estimated time' ) ) {
+            return;
+        }
+        var remainingEstimate = getSum( group, "Estimated time" );
+        var completedPercent = getAvgPercent( group, "% Done", ".closed" );
+        //var remainingPercent = getAvgPercent( group, "% Done", ".todo" );
+        setGroupInfo( group, 'percent-remaining', "Estimated remaining: " + (remainingEstimate - (remainingEstimate * (completedPercent / 100))) );
+    } )
+
+    updateGroups();
     enableDragAndDrop();
     setupKeyShortcut();
-    
-    $("#quick-search select").chosen({no_results_text: "Not found"}); 
+
+    $( "#quick-search select" ).chosen( {no_results_text: "Not found"} );
 } );
