@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Redmine Drag 'n drop
 // @namespace    www.8d.com
-// @version      0.5
+// @version      0.6
 // @description  Drag 'n Drop awesomeness
 // @include      https://*redmine*issues/*
 // @include      https://*redmine*/*/issues*
@@ -357,7 +357,7 @@ function setupKeyShortcut() {
 }
 
 $( function () {
-    addGroupSum( "Estimated time", "Estimated total" );
+    addGroupSum( "Estimated time", "Estimated" );
 
     addGroupUpdator( function ( group ) {
         if ( !isColumnDisplayed( '% Done' ) || !isColumnDisplayed( 'Estimated time' ) ) {
@@ -366,7 +366,7 @@ $( function () {
         var remainingEstimate = getSum( group, "Estimated time" );
         var completedPercent = getAvgPercent( group, "% Done", ".closed" );
         //var remainingPercent = getAvgPercent( group, "% Done", ".todo" );
-        setGroupInfo( group, 'percent-remaining', "Estimated remaining: " + (remainingEstimate - (remainingEstimate * (completedPercent / 100))) );
+        setGroupInfo( group, 'percent-remaining', "Remaining: " + (remainingEstimate - (remainingEstimate * (completedPercent / 100))) );
     } )
 
     updateGroups();
