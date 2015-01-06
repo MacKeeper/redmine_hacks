@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Redmine Drag 'n drop
 // @namespace    www.8d.com
-// @version      0.6
+// @version      0.7
 // @description  Drag 'n Drop awesomeness
 // @include      https://*redmine*issues/*
 // @include      https://*redmine*/*/issues*
@@ -157,45 +157,70 @@ function setGroupInfo( group, infoClass, info ) {
     countSpan.text( info );
 }
 
-function getSum( group, columnName ) {
+function getColumnIndex( columnName ){
     var columnIndex = $( ".list.issues thead tr th:contains('" + columnName + "')" ).index();
+    if ( columnIndex == -1 ) {
+        return undefined;
+    }
     // Offset by one for issues
-    columnIndex += 1;
+    return columnIndex + 1;
+}
+
+function getCellValueFloat( cell ){
+    var value = $( cell ).text();
+    if ( value !== undefined && value !== "" ) {
+        return parseFloat( value );
+    } else {
+        return undefined;
+    }
+}
+
+function getSum( group, columnName ) {
+    var columnIndex = getColumnIndex( columnName );
 
     var sum = 0;
     var issues = group.nextUntil( ".group" ).filter( ":not(.dragged-element)" );
     issues.find( ":nth-child(" + columnIndex + ")" ).each( function ( i, cell ) {
-        var estimate = $( cell ).text();
-        if ( estimate !== undefined && estimate !== "" ) {
-            sum += parseFloat( estimate );
+        var estimate = getCellValueFloat( cell );
+        if ( estimate !== undefined ) {
+            sum += estimate;
         }
     } );
     return sum;
 }
 
-function getAvgPercent( group, columnName, percentCellClass ) {
-    // % Done
-    var columnIndex = $( ".list.issues thead tr th:contains('" + columnName + "')" ).index();
-    // Only apply if column is present
-    if ( columnIndex == -1 ) {
+function getTimeRemaining( group ){
+    var estimatedTimeColumnIndex = getColumnIndex( "Estimated time" );
+    var percentDoneColumnIndex = getColumnIndex( "% Done" );
+    if( percentDoneColumnIndex == undefined ){
         return undefined;
     }
-    // Offset by one for issues
-    columnIndex += 1;
-
-    var sum = 0;
-    var count = 0
+    
+    var totalRemaining = 0;
+    
     var issues = group.nextUntil( ".group" ).filter( ":not(.dragged-element)" );
-    issues.find( ":nth-child(" + columnIndex + ") " + percentCellClass ).each( function ( i, cell ) {
-        widthPercent = cell.style.width;
-        if ( widthPercent !== undefined && widthPercent !== "" ) {
-            sum += parseFloat( widthPercent.substr( 0, widthPercent.length - 1 ) );
-            count++;
+    issues.each( function ( i, issue ) {
+        var issue = $(issue);
+        var estimate = getCellValueFloat( issue.find( ":nth-child(" + estimatedTimeColumnIndex + ")" ) );
+        if( estimate == undefined ){
+            return;
         }
+        
+        var closedPercent = 0;
+        var closedPercentCell = issue.find( ":nth-child(" + percentDoneColumnIndex + ") .closed" );
+        if( closedPercentCell.length != 0 ){
+            widthPercent = closedPercentCell[0].style.width;
+            console.log( "Width percent:" + widthPercent );
+            if ( widthPercent !== undefined && widthPercent !== "" ) {
+                closedPercent = parseFloat( widthPercent.substr( 0, widthPercent.length - 1 ) ) / 100;
+            }
+        }
+        
+        totalRemaining += estimate * (1-closedPercent);
     } );
-    return sum / count;
+    
+    return totalRemaining;
 }
-
 
 function getLastRowOfGroup( group ) {
     var nextGroupTr = $( group ).nextAll( ".group" ).first();
@@ -357,16 +382,16 @@ function setupKeyShortcut() {
 }
 
 $( function () {
+    console.log( "New" );
+    
     addGroupSum( "Estimated time", "Estimated" );
 
     addGroupUpdator( function ( group ) {
         if ( !isColumnDisplayed( '% Done' ) || !isColumnDisplayed( 'Estimated time' ) ) {
             return;
         }
-        var remainingEstimate = getSum( group, "Estimated time" );
-        var completedPercent = getAvgPercent( group, "% Done", ".closed" );
-        //var remainingPercent = getAvgPercent( group, "% Done", ".todo" );
-        setGroupInfo( group, 'percent-remaining', "Remaining: " + (remainingEstimate - (remainingEstimate * (completedPercent / 100))) );
+        setGroupInfo( group, 'percent-remaining', "Remaining: " + getTimeRemaining( group ) );
+        
     } )
 
     updateGroups();
